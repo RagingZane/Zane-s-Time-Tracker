@@ -1057,7 +1057,6 @@
                         </select>
                     </div>
                     <button class="btn btn-secondary" onclick="clearFilters()" style="margin-top: 16px;">🗑️ 清除筛选</button>
-                    <button class="btn btn-danger" onclick="clearAllRecords()" style="margin-top: 16px;">🗑️ 清除所有记录</button>
                 </div>
             </div>
 
@@ -1107,6 +1106,10 @@
                 <button class="btn btn-secondary" onclick="exportData()">📤 导出JSON</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入JSON</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+            </div>
+
+            <div style="text-align: center; margin-top: 32px; padding: 24px 0; border-top: 1px solid var(--table-border);">
+                <button class="btn btn-danger" onclick="clearAllRecords()">🗑️ 清除所有记录</button>
             </div>
         </div>
     </div>
