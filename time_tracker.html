@@ -751,6 +751,34 @@
             background: rgba(255,255,255,0.5);
         }
 
+        #recordsTable .edit-btn,
+        #recordsTable .delete-btn {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-right: 4px;
+        }
+
+        #recordsTable .edit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        #recordsTable .edit-btn:hover {
+            background: #45a049;
+        }
+
+        #recordsTable .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        #recordsTable .delete-btn:hover {
+            background: #da190b;
+        }
+
         .pagination {
             display: flex;
             justify-content: space-between;
@@ -1048,7 +1076,7 @@
 
             <h3 class="section-title" style="margin-top: 24px;">📋 记录明细</h3>
             <div class="table-container">
-                <table id="recordsTable">
+                <table id="recordsTable" class="records-table">
                     <thead>
                         <tr>
                             <th>日期</th>
@@ -1570,7 +1598,10 @@
                         <td>${r.activities || '-'}</td>
                         <td>${r.resources || '-'}</td>
                         <td>${r.progress || '-'}</td>
-                        <td><button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button></td>
+                        <td>
+                            <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
+                            <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1942,7 +1973,10 @@
                         <td>${r.activities || '-'}</td>
                         <td>${r.resources || '-'}</td>
                         <td>${r.progress || '-'}</td>
-                        <td><button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button></td>
+                        <td>
+                            <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
+                            <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -2320,6 +2354,108 @@
                 indicator.className = 'mode-indicator local-mode';
             }
         }
+
+        function openEditModal(recordId) {
+            const record = data.records.find(r => r.id === recordId);
+            if (!record) return;
+
+            document.getElementById('editRecordId').value = record.id;
+            document.getElementById('editDate').value = record.date;
+            document.getElementById('editStartTime').value = record.startTime;
+            document.getElementById('editEndTime').value = record.endTime;
+            document.getElementById('editFocus').value = record.focus;
+
+            document.getElementById('editTopics').value = record.topics || '';
+            document.getElementById('editActivities').value = record.activities || '';
+            document.getElementById('editResources').value = record.resources || '';
+            document.getElementById('editProgress').value = record.progress || '';
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function saveEditRecord() {
+            const recordId = document.getElementById('editRecordId').value;
+            const record = data.records.find(r => r.id === recordId);
+            if (!record) return;
+
+            record.date = document.getElementById('editDate').value;
+            record.startTime = document.getElementById('editStartTime').value;
+            record.endTime = document.getElementById('editEndTime').value;
+            record.focus = parseInt(document.getElementById('editFocus').value);
+            record.topics = document.getElementById('editTopics').value;
+            record.activities = document.getElementById('editActivities').value;
+            record.resources = document.getElementById('editResources').value;
+            record.progress = document.getElementById('editProgress').value;
+
+            saveData();
+            closeEditModal();
+            updateStats();
+            renderRecordsTable();
+            alert('记录已更新！');
+        }
     </script>
+
+    <div id="editModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+        <div class="modal-content" style="background: var(--card-bg); padding: 24px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin-bottom: 20px;">编辑记录</h2>
+            <input type="hidden" id="editRecordId">
+
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="editDate" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>开始时间</label>
+                    <input type="time" id="editStartTime" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>结束时间</label>
+                    <input type="time" id="editEndTime" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>专注度</label>
+                <select id="editFocus" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                    <option value="1">1 - 低</option>
+                    <option value="2">2 - 中低</option>
+                    <option value="3">3 - 中</option>
+                    <option value="4">4 - 中高</option>
+                    <option value="5">5 - 高</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>主题</label>
+                <input type="text" id="editTopics" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+            </div>
+
+            <div class="form-group">
+                <label>活动</label>
+                <input type="text" id="editActivities" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+            </div>
+
+            <div class="form-group">
+                <label>对象</label>
+                <input type="text" id="editResources" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+            </div>
+
+            <div class="form-group">
+                <label>进度</label>
+                <input type="text" id="editProgress" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveEditRecord()" style="flex: 1;">保存</button>
+                <button class="btn btn-secondary" onclick="closeEditModal()" style="flex: 1;">取消</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
