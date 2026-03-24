@@ -902,7 +902,7 @@
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>对象</label>
-                        <select id="detail2" onchange="updateDetail3Options()">
+                        <select id="detail2">
                             <option value="">先选择活动</option>
                             <option value="custom">+ 自定义...</option>
                         </select>
@@ -910,18 +910,7 @@
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>进度</label>
-                        <select id="detail3">
-                            <option value="">先选择对象</option>
-                            <option value="custom">+ 自定义...</option>
-                        </select>
-                        <input type="text" id="customDetail3" placeholder="输入自定义进度" style="margin-top: 8px; display: none;">
-                    </div>
-                </div>
-
-                <div class="form-row" style="margin-top: 16px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>备注</label>
-                        <input type="text" id="note" placeholder="可选备注">
+                        <input type="text" id="detail3" placeholder="输入进度">
                     </div>
                 </div>
 
@@ -943,16 +932,13 @@
                     <button class="btn btn-primary" onclick="addMainActivity()">➕ 添加</button>
                 </div>
 
-                <h3 class="section-title">活动 / 对象 / 进度 管理</h3>
+                <h3 class="section-title">活动 / 对象 管理</h3>
                 <div style="display: flex; gap: 16px; margin-bottom: 16px;">
                     <select id="activityForDetail" onchange="renderActivityList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px;">
                         <option value="">选择主题</option>
                     </select>
                     <select id="detailForContent" onchange="renderContentList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; display: none;">
                         <option value="">选择活动</option>
-                    </select>
-                    <select id="contentForDetail" onchange="renderDetailList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; display: none;">
-                        <option value="">选择内容</option>
                     </select>
                 </div>
 
@@ -1153,7 +1139,8 @@
                 'Entertainment': ['Movies', 'Games', 'Social Media', 'Reading']
             },
             contents: {},
-            details: {}
+            details: {},
+            progresses: []
         };
 
         let categories = JSON.parse(JSON.stringify(defaultCategories));
@@ -1258,7 +1245,6 @@
             const customInput = document.getElementById('customMainActivity');
             const detail1Select = document.getElementById('detail1');
             const detail2Select = document.getElementById('detail2');
-            const detail3Select = document.getElementById('detail3');
 
             if (mainActivity.value === 'custom') {
                 customInput.style.display = 'block';
@@ -1279,16 +1265,18 @@
             detail1Select.value = '';
             detail2Select.innerHTML = '<option value="">先选择活动</option><option value="custom">+ 自定义...</option>';
             detail2Select.value = '';
-            detail3Select.innerHTML = '<option value="">先选择对象</option><option value="custom">+ 自定义...</option>';
-            detail3Select.value = '';
+            document.getElementById('detail3').value = '';
             updateDetail2Options();
         }
 
         function updateDetail2Options() {
+            const mainActivitySelect = document.getElementById('mainActivity');
+            const mainActivityCustom = document.getElementById('customMainActivity');
             const detail1Select = document.getElementById('detail1');
             const customInput = document.getElementById('customDetail1');
             const detail2Select = document.getElementById('detail2');
-            const detail3Select = document.getElementById('detail3');
+
+            const mainActivity = mainActivitySelect.value === 'custom' ? mainActivityCustom.value : mainActivitySelect.value;
 
             if (detail1Select.value === 'custom') {
                 customInput.style.display = 'block';
@@ -1297,28 +1285,21 @@
             } else {
                 customInput.style.display = 'none';
                 customInput.required = false;
-                detail2Select.innerHTML = '<option value="">选择对象</option><option value="custom">+ 自定义...</option>';
+                
+                let optionsHtml = '<option value="">选择对象</option>';
+                
+                if (mainActivity && detail1Select.value) {
+                    const contentKey = `${mainActivity}|${detail1Select.value}`;
+                    const contents = categories.contents[contentKey] || [];
+                    contents.forEach(name => {
+                        optionsHtml += `<option value="${name}">${name}</option>`;
+                    });
+                }
+                
+                optionsHtml += '<option value="custom">+ 自定义...</option>';
+                detail2Select.innerHTML = optionsHtml;
             }
             detail2Select.value = '';
-            detail3Select.innerHTML = '<option value="">先选择对象</option><option value="custom">+ 自定义...</option>';
-            detail3Select.value = '';
-        }
-
-        function updateDetail3Options() {
-            const detail2Select = document.getElementById('detail2');
-            const customInput = document.getElementById('customDetail2');
-            const detail3Select = document.getElementById('detail3');
-
-            if (detail2Select.value === 'custom') {
-                customInput.style.display = 'block';
-                customInput.required = true;
-                detail3Select.innerHTML = '<option value="">选择或输入进度</option><option value="custom">+ 自定义...</option>';
-            } else {
-                customInput.style.display = 'none';
-                customInput.required = false;
-                detail3Select.innerHTML = '<option value="">选择进度</option><option value="custom">+ 自定义...</option>';
-            }
-            detail3Select.value = '';
         }
 
         function getMainActivityValue() {
@@ -1339,7 +1320,7 @@
             const mainActivity = getMainActivityValue();
             const detail1 = getDetailValue('detail1', 'customDetail1');
             const detail2 = getDetailValue('detail2', 'customDetail2');
-            const detail3 = getDetailValue('detail3', 'customDetail3');
+            const detail3 = document.getElementById('detail3').value;
 
             if (!mainActivity) {
                 alert('请选择或输入主题');
@@ -1352,11 +1333,10 @@
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
                 focus: parseInt(document.getElementById('focus').value),
-                activity: mainActivity,
-                detail1: detail1,
-                detail2: detail2,
-                detail3: detail3,
-                note: document.getElementById('note').value,
+                topics: mainActivity,
+                activities: detail1,
+                resources: detail2,
+                progress: detail3,
                 createdAt: new Date().toISOString()
             };
 
@@ -1372,11 +1352,10 @@
             document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('detail1').innerHTML = '<option value="">先选择主题</option>';
             document.getElementById('detail2').innerHTML = '<option value="">先选择活动</option>';
-            document.getElementById('detail3').innerHTML = '<option value="">先选择对象</option>';
+            document.getElementById('detail3').value = '';
             document.getElementById('customMainActivity').style.display = 'none';
             document.getElementById('customDetail1').style.display = 'none';
             document.getElementById('customDetail2').style.display = 'none';
-            document.getElementById('customDetail3').style.display = 'none';
 
             updateStats();
             renderRecordsTable();
@@ -1508,7 +1487,7 @@
                 const hours = calculateHours(r.startTime, r.endTime);
                 totalMinutes += hours * 60;
                 weightedFocusSum += r.focus * hours;
-                activityCount[r.activity] = (activityCount[r.activity] || 0) + hours;
+                activityCount[r.topics] = (activityCount[r.topics] || 0) + hours;
             });
 
             const totalHours = (totalMinutes / 60).toFixed(1);
@@ -1528,17 +1507,17 @@
 
         function updateSearchActivityOptions() {
             const select = document.getElementById('searchActivity');
-            const activities = [...new Set(data.records.map(r => r.activity))].sort();
+            const activities = [...new Set(data.records.map(r => r.topics))].sort();
             select.innerHTML = '<option value="">全部</option>' +
                 activities.map(a => `<option value="${a}">${a}</option>`).join('');
 
             const select1 = document.getElementById('searchDetail1');
-            const details1 = [...new Set(data.records.map(r => r.detail1).filter(Boolean))].sort();
+            const details1 = [...new Set(data.records.map(r => r.activities).filter(Boolean))].sort();
             select1.innerHTML = '<option value="">全部</option>' +
                 details1.map(d => `<option value="${d}">${d}</option>`).join('');
 
             const select2 = document.getElementById('searchDetail2');
-            const details2 = [...new Set(data.records.map(r => r.detail2).filter(Boolean))].sort();
+            const details2 = [...new Set(data.records.map(r => r.resources).filter(Boolean))].sort();
             select2.innerHTML = '<option value="">全部</option>' +
                 details2.map(d => `<option value="${d}">${d}</option>`).join('');
         }
@@ -1553,9 +1532,9 @@
             const filteredRecords = data.records.filter(r => {
                 if (startDate && r.date < startDate) return false;
                 if (endDate && r.date > endDate) return false;
-                if (activityVal && r.activity !== activityVal) return false;
-                if (detail1Val && r.detail1 !== detail1Val) return false;
-                if (detail2Val && r.detail2 !== detail2Val) return false;
+                if (activityVal && r.topics !== activityVal) return false;
+                if (detail1Val && r.activities !== detail1Val) return false;
+                if (detail2Val && r.resources !== detail2Val) return false;
                 return true;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -1587,10 +1566,10 @@
                         <td>${r.startTime} - ${r.endTime}</td>
                         <td>${hours.toFixed(1)}h</td>
                         <td><span class="focus-badge ${focusClass}">${r.focus}</span></td>
-                        <td>${r.activity}</td>
-                        <td>${r.detail1 || '-'}</td>
-                        <td>${r.detail2 || '-'}</td>
-                        <td>${r.detail3 || '-'}</td>
+                        <td>${r.topics}</td>
+                        <td>${r.activities || '-'}</td>
+                        <td>${r.resources || '-'}</td>
+                        <td>${r.progress || '-'}</td>
                         <td><button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button></td>
                     </tr>
                 `;
@@ -1872,12 +1851,12 @@
                                     }
                                     if (currentPeriod === 'day' || currentPeriod === 'week' || currentPeriod === 'month') {
                                         const details = periodRecords.map(r => {
-                                            return `${r.activity} / ${r.detail1 || '-'} / ${r.detail2 || '-'} / ${r.detail3 || '-'}`;
+                                            return `${r.topics} / ${r.activities || '-'} / ${r.resources || '-'} / ${r.progress || '-'}`;
                                         });
                                         return ['', '活动详情:', ...details];
                                     } else {
                                         const totalHours = periodRecords.reduce((sum, r) => sum + calculateHours(r.startTime, r.endTime), 0).toFixed(1);
-                                        const uniqueActivities = [...new Set(periodRecords.map(r => r.activity))];
+                                        const uniqueActivities = [...new Set(periodRecords.map(r => r.topics))];
                                         return ['', `记录数: ${periodRecords.length}`, `总时长: ${totalHours}小时`, `主题: ${uniqueActivities.join(', ')}`];
                                     }
                                 },
@@ -1959,10 +1938,10 @@
                         <td>${r.startTime} - ${r.endTime}</td>
                         <td>${hours.toFixed(1)}h</td>
                         <td><span class="focus-badge ${focusClass}">${r.focus}</span></td>
-                        <td>${r.activity}</td>
-                        <td>${r.detail1 || '-'}</td>
-                        <td>${r.detail2 || '-'}</td>
-                        <td>${r.detail3 || '-'}</td>
+                        <td>${r.topics}</td>
+                        <td>${r.activities || '-'}</td>
+                        <td>${r.resources || '-'}</td>
+                        <td>${r.progress || '-'}</td>
                         <td><button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button></td>
                     </tr>
                 `;
@@ -2080,7 +2059,6 @@
             const topicSelect = document.getElementById('mainActivity');
             const activityForDetail = document.getElementById('activityForDetail');
             const detailForContent = document.getElementById('detailForContent');
-            const contentForDetail = document.getElementById('contentForDetail');
 
             let optionsHtml = '<option value="">选择或输入主题</option>';
             categories.topics.forEach(name => {
@@ -2095,25 +2073,20 @@
 
             detailForContent.innerHTML = '<option value="">选择活动</option>';
             detailForContent.style.display = 'none';
-            contentForDetail.innerHTML = '<option value="">选择对象</option>';
-            contentForDetail.style.display = 'none';
         }
 
         function renderActivityList() {
             const topic = document.getElementById('activityForDetail').value;
             const detailForContent = document.getElementById('detailForContent');
-            const contentForDetail = document.getElementById('contentForDetail');
             const itemList = document.getElementById('itemList');
 
             if (!topic) {
                 detailForContent.style.display = 'none';
-                contentForDetail.style.display = 'none';
                 itemList.innerHTML = '';
                 return;
             }
 
             detailForContent.style.display = 'block';
-            contentForDetail.style.display = 'none';
 
             let optionsHtml = '<option value="">选择活动</option>';
             const activities = categories.activities[topic] || [];
@@ -2134,54 +2107,21 @@
         function renderContentList() {
             const topic = document.getElementById('activityForDetail').value;
             const activity = document.getElementById('detailForContent').value;
-            const contentForDetail = document.getElementById('contentForDetail');
             const itemList = document.getElementById('itemList');
 
             if (!activity || activity === 'custom') {
-                contentForDetail.style.display = 'none';
                 itemList.innerHTML = '';
                 return;
             }
 
-            contentForDetail.style.display = 'block';
-
             const contentKey = `${topic}|${activity}`;
             const contents = categories.contents[contentKey] || [];
-
-            let optionsHtml = '<option value="">选择对象</option>';
-            contents.forEach(name => {
-                optionsHtml += `<option value="${name}">${name}</option>`;
-            });
-            contentForDetail.innerHTML = optionsHtml + '<option value="custom">+ 自定义...</option>';
 
             itemList.innerHTML = contents.map(name => `
                 <div class="detail-tag">
                     <span>${name}</span>
                     <button class="edit-btn" onclick="editItem('content', '${contentKey}', '${name}')" title="编辑">✏️</button>
                     <button class="delete-btn-tag" onclick="deleteItem('content', '${contentKey}', '${name}')" title="删除">×</button>
-                </div>
-            `).join('');
-        }
-
-        function renderDetailList() {
-            const topic = document.getElementById('activityForDetail').value;
-            const activity = document.getElementById('detailForContent').value;
-            const content = document.getElementById('contentForDetail').value;
-            const itemList = document.getElementById('itemList');
-
-            if (!content || content === 'custom') {
-                itemList.innerHTML = '';
-                return;
-            }
-
-            const detailKey = `${topic}|${activity}|${content}`;
-            const details = categories.details[detailKey] || [];
-
-            itemList.innerHTML = details.map(name => `
-                <div class="detail-tag">
-                    <span>${name}</span>
-                    <button class="edit-btn" onclick="editItem('detail', '${detailKey}', '${name}')" title="编辑">✏️</button>
-                    <button class="delete-btn-tag" onclick="deleteItem('detail', '${detailKey}', '${name}')" title="删除">×</button>
                 </div>
             `).join('');
         }
@@ -2218,7 +2158,7 @@
             delete categories.activities[oldName];
             categories.topics = categories.topics.map(t => t === oldName ? newName : t);
             data.records.forEach(r => {
-                if (r.activity === oldName) r.activity = newName;
+                if (r.topics === oldName) r.topics = newName;
             });
             saveData();
             renderMainActivityList();
@@ -2239,7 +2179,6 @@
         function addItem() {
             const topic = document.getElementById('activityForDetail').value;
             const activity = document.getElementById('detailForContent').value;
-            const content = document.getElementById('contentForDetail').value;
             const input = document.getElementById('newItem');
             const name = input.value.trim();
 
@@ -2265,30 +2204,16 @@
                 return;
             }
 
-            if (!content || content === 'custom') {
-                const contentKey = `${topic}|${activity}`;
-                if (!categories.contents[contentKey]) categories.contents[contentKey] = [];
-                if (categories.contents[contentKey].includes(name)) {
-                    alert('该内容已存在');
-                    return;
-                }
-                categories.contents[contentKey].push(name);
-                saveData();
-                input.value = '';
-                renderContentList();
+            const contentKey = `${topic}|${activity}`;
+            if (!categories.contents[contentKey]) categories.contents[contentKey] = [];
+            if (categories.contents[contentKey].includes(name)) {
+                alert('该内容已存在');
                 return;
             }
-
-            const detailKey = `${topic}|${activity}|${content}`;
-            if (!categories.details[detailKey]) categories.details[detailKey] = [];
-            if (categories.details[detailKey].includes(name)) {
-                alert('该详情已存在');
-                return;
-            }
-            categories.details[detailKey].push(name);
+            categories.contents[contentKey].push(name);
             saveData();
             input.value = '';
-            renderDetailList();
+            renderContentList();
         }
 
         function editItem(type, key, oldName) {
@@ -2302,7 +2227,7 @@
                 }
                 categories.activities[key] = categories.activities[key].map(n => n === oldName ? newName : n);
                 data.records.forEach(r => {
-                    if (r.detail1 === oldName) r.detail1 = newName;
+                    if (r.activities === oldName) r.activities = newName;
                 });
             } else if (type === 'content') {
                 if (!categories.contents[key]) categories.contents[key] = [];
@@ -2312,24 +2237,13 @@
                 }
                 categories.contents[key] = categories.contents[key].map(n => n === oldName ? newName : n);
                 data.records.forEach(r => {
-                    if (r.detail2 === oldName) r.detail2 = newName;
-                });
-            } else if (type === 'detail') {
-                if (!categories.details[key]) categories.details[key] = [];
-                if (categories.details[key].includes(newName)) {
-                    alert('该名称已存在');
-                    return;
-                }
-                categories.details[key] = categories.details[key].map(n => n === oldName ? newName : n);
-                data.records.forEach(r => {
-                    if (r.detail3 === oldName) r.detail3 = newName;
+                    if (r.resources === oldName) r.resources = newName;
                 });
             }
 
             saveData();
             if (type === 'activity') renderActivityList();
-            else if (type === 'content') renderContentList();
-            else renderDetailList();
+            else renderContentList();
             updateStats();
         }
 
@@ -2340,15 +2254,51 @@
                 categories.activities[key] = categories.activities[key].filter(n => n !== name);
             } else if (type === 'content') {
                 categories.contents[key] = (categories.contents[key] || []).filter(n => n !== name);
-            } else if (type === 'detail') {
-                categories.details[key] = (categories.details[key] || []).filter(n => n !== name);
             }
 
             saveData();
             if (type === 'activity') renderActivityList();
-            else if (type === 'content') renderContentList();
-            else renderDetailList();
+            else renderContentList();
             updateStats();
+        }
+
+        function renderProgressList() {
+            const progressList = document.getElementById('progressList');
+            const progresses = categories.progresses || [];
+            progressList.innerHTML = progresses.map(name => `
+                <div class="detail-tag">
+                    <span>${name}</span>
+                    <button class="delete-btn-tag" onclick="deleteProgress('${name}')" title="删除">×</button>
+                </div>
+            `).join('');
+        }
+
+        function addProgress() {
+            const input = document.getElementById('newProgress');
+            const name = input.value.trim();
+
+            if (!name) {
+                alert('请输入进度名称');
+                return;
+            }
+
+            if (!categories.progresses) categories.progresses = [];
+            if (categories.progresses.includes(name)) {
+                alert('该进度已存在');
+                return;
+            }
+
+            categories.progresses.push(name);
+            saveData();
+            input.value = '';
+            renderProgressList();
+        }
+
+        function deleteProgress(name) {
+            if (!confirm(`确定要删除进度 "${name}" 吗？\n这不会删除已有的记录。`)) return;
+            categories.progresses = (categories.progresses || []).filter(n => n !== name);
+            saveData();
+            renderProgressList();
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
