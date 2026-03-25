@@ -871,82 +871,24 @@
 
         <div class="card">
             <h2 class="card-title">📝 记录时间</h2>
-            <form id="recordForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>日期</label>
-                        <input type="date" id="recordDate" required>
+            <div id="timerSection">
+                <div id="timerStatus" style="text-align: center; margin-bottom: 20px;">
+                    <div id="currentTimerDisplay" style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 10px; display: none;">
+                        <span id="timerStartTime"></span> 开始
                     </div>
-                    <div class="form-group">
-                        <label>开始时间</label>
-                        <div class="time-group">
-                            <input type="time" id="startTime" required>
-                            <button type="button" class="btn btn-now" onclick="setCurrentTime('startTime')">现在</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>结束时间</label>
-                        <div class="time-group">
-                            <input type="time" id="endTime" required>
-                            <button type="button" class="btn btn-now" onclick="setCurrentTime('endTime')">现在</button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>专注度</label>
-                        <select id="focus" required>
-                            <option value="">选择专注度</option>
-                            <option value="1">⭐ 1 - 发呆</option>
-                            <option value="2">⭐⭐ 2 - 读到哪儿了</option>
-                            <option value="3">⭐⭐⭐ 3 - 还有多久</option>
-                            <option value="4">⭐⭐⭐⭐ 4 - 别来烦我</option>
-                            <option value="5">⭐⭐⭐⭐⭐ 5 - 心流</option>
-                        </select>
+                    <div id="timerDuration" style="font-size: 2rem; font-weight: bold; color: var(--btn-primary-bg); display: none;">
+                        <span id="elapsedTime">00:00:00</span>
                     </div>
                 </div>
-
-                <div class="form-row" style="margin-top: 16px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>主题</label>
-                        <select id="mainActivity" onchange="updateDetailOptions()">
-                            <option value="">选择或输入主题</option>
-                            <option value="Resources">Resources（资源）</option>
-                            <option value="Work">Work（工作）</option>
-                            <option value="Learning">Learning（学习）</option>
-                            <option value="Exercise">Exercise（运动）</option>
-                            <option value="Rest">Rest（休息）</option>
-                            <option value="Life">Life（生活）</option>
-                            <option value="Entertainment">Entertainment（娱乐）</option>
-                            <option value="custom">+ 自定义...</option>
-                        </select>
-                        <input type="text" id="customMainActivity" placeholder="输入自定义主题" style="margin-top: 8px; display: none;">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>活动</label>
-                        <select id="detail1" onchange="updateDetail2Options()">
-                            <option value="">先选择主题</option>
-                            <option value="custom">+ 自定义...</option>
-                        </select>
-                        <input type="text" id="customDetail1" placeholder="输入自定义活动" style="margin-top: 8px; display: none;">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>对象</label>
-                        <select id="detail2">
-                            <option value="">先选择活动</option>
-                            <option value="custom">+ 自定义...</option>
-                        </select>
-                        <input type="text" id="customDetail2" placeholder="输入自定义对象" style="margin-top: 8px; display: none;">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>进度</label>
-                        <input type="text" id="detail3" placeholder="输入进度">
-                    </div>
+                <div class="btn-group" style="justify-content: center;">
+                    <button id="startBtn" class="btn btn-primary" onclick="startTimer()" style="font-size: 1.2rem; padding: 16px 40px;">
+                        ▶️ 开始
+                    </button>
+                    <button id="endBtn" class="btn btn-danger" onclick="endTimer()" style="font-size: 1.2rem; padding: 16px 40px; display: none;">
+                        ⏹️ 结束
+                    </button>
                 </div>
-
-                <div class="btn-group">
-                    <button type="submit" class="btn btn-primary">💾 保存记录</button>
-                    <button type="reset" class="btn btn-secondary">🔄 重置</button>
-                </div>
-            </form>
+            </div>
         </div>
 
         <div class="card">
@@ -1154,6 +1096,8 @@
         let currentPage = 1;
         let pageSize = 10;
         let totalRecords = [];
+        let activeRecordId = null;
+        let timerInterval = null;
 
         const defaultCategories = {
             topics: ['Resources', 'Work', 'Learning', 'Exercise', 'Rest', 'Life', 'Entertainment'],
@@ -1261,135 +1205,103 @@
             URL.revokeObjectURL(url);
         }
 
-        function setCurrentTime(timeId) {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById(timeId).value = `${hours}:${minutes}`;
-        }
-
-        function updateDetailOptions() {
-            const mainActivity = document.getElementById('mainActivity');
-            const customInput = document.getElementById('customMainActivity');
-            const detail1Select = document.getElementById('detail1');
-            const detail2Select = document.getElementById('detail2');
-
-            if (mainActivity.value === 'custom') {
-                customInput.style.display = 'block';
-                customInput.required = true;
-                detail1Select.innerHTML = '<option value="">选择或输入活动</option><option value="custom">+ 自定义...</option>';
-            } else {
-                customInput.style.display = 'none';
-                customInput.required = false;
-
-                const options = categories.activities[mainActivity.value] || [];
-                let html = '<option value="">选择活动</option>';
-                options.forEach(opt => {
-                    html += `<option value="${opt}">${opt}</option>`;
-                });
-                html += '<option value="custom">+ 自定义...</option>';
-                detail1Select.innerHTML = html;
-            }
-            detail1Select.value = '';
-            detail2Select.innerHTML = '<option value="">先选择活动</option><option value="custom">+ 自定义...</option>';
-            detail2Select.value = '';
-            document.getElementById('detail3').value = '';
-            updateDetail2Options();
-        }
-
-        function updateDetail2Options() {
-            const mainActivitySelect = document.getElementById('mainActivity');
-            const mainActivityCustom = document.getElementById('customMainActivity');
-            const detail1Select = document.getElementById('detail1');
-            const customInput = document.getElementById('customDetail1');
-            const detail2Select = document.getElementById('detail2');
-
-            const mainActivity = mainActivitySelect.value === 'custom' ? mainActivityCustom.value : mainActivitySelect.value;
-
-            if (detail1Select.value === 'custom') {
-                customInput.style.display = 'block';
-                customInput.required = true;
-                detail2Select.innerHTML = '<option value="">选择或输入对象</option><option value="custom">+ 自定义...</option>';
-            } else {
-                customInput.style.display = 'none';
-                customInput.required = false;
-                
-                let optionsHtml = '<option value="">选择对象</option>';
-                
-                if (mainActivity && detail1Select.value) {
-                    const contentKey = `${mainActivity}|${detail1Select.value}`;
-                    const contents = categories.contents[contentKey] || [];
-                    contents.forEach(name => {
-                        optionsHtml += `<option value="${name}">${name}</option>`;
-                    });
-                }
-                
-                optionsHtml += '<option value="custom">+ 自定义...</option>';
-                detail2Select.innerHTML = optionsHtml;
-            }
-            detail2Select.value = '';
-        }
-
-        function getMainActivityValue() {
-            const select = document.getElementById('mainActivity');
-            const custom = document.getElementById('customMainActivity');
-            return select.value === 'custom' ? custom.value : select.value;
-        }
-
-        function getDetailValue(selectId, customId) {
-            const select = document.getElementById(selectId);
-            const custom = document.getElementById(customId);
-            return select.value === 'custom' ? custom.value : select.value;
-        }
-
-        document.getElementById('recordForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const mainActivity = getMainActivityValue();
-            const detail1 = getDetailValue('detail1', 'customDetail1');
-            const detail2 = getDetailValue('detail2', 'customDetail2');
-            const detail3 = document.getElementById('detail3').value;
-
-            if (!mainActivity) {
-                alert('请选择或输入主题');
+        function startTimer() {
+            if (activeRecordId) {
+                alert('已有进行中的记录，请先结束当前记录');
                 return;
             }
 
+            const now = new Date();
             const record = {
                 id: generateId(),
-                date: document.getElementById('recordDate').value,
-                startTime: document.getElementById('startTime').value,
-                endTime: document.getElementById('endTime').value,
-                focus: parseInt(document.getElementById('focus').value),
-                topics: mainActivity,
-                activities: detail1,
-                resources: detail2,
-                progress: detail3,
-                createdAt: new Date().toISOString()
+                date: now.toISOString().split('T')[0],
+                startTime: now.toTimeString().slice(0, 5),
+                endTime: '',
+                focus: 0,
+                topics: '',
+                activities: '',
+                resources: '',
+                progress: '',
+                createdAt: now.toISOString(),
+                inProgress: true
             };
 
-            if (record.endTime <= record.startTime) {
-                alert('结束时间必须晚于开始时间');
+            data.records.push(record);
+            activeRecordId = record.id;
+            saveData();
+
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('endBtn').style.display = 'inline-block';
+            document.getElementById('currentTimerDisplay').style.display = 'block';
+            document.getElementById('timerDuration').style.display = 'block';
+            document.getElementById('timerStartTime').textContent = record.startTime;
+
+            timerInterval = setInterval(updateElapsedTime, 1000, record.startTime);
+            renderRecordsTable();
+        }
+
+        function updateElapsedTime(startTime) {
+            const [sh, sm] = startTime.split(':').map(Number);
+            const now = new Date();
+            const startMinutes = sh * 60 + sm;
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+            const elapsedMinutes = nowMinutes - startMinutes;
+            const seconds = now.getSeconds();
+            
+            const hours = Math.floor(elapsedMinutes / 60);
+            const minutes = elapsedMinutes % 60;
+            
+            document.getElementById('elapsedTime').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function endTimer() {
+            if (!activeRecordId) {
+                alert('没有进行中的记录');
                 return;
             }
 
-            data.records.push(record);
+            const record = data.records.find(r => r.id === activeRecordId);
+            if (!record) {
+                activeRecordId = null;
+                return;
+            }
+
+            const now = new Date();
+            record.endTime = now.toTimeString().slice(0, 5);
+            record.inProgress = false;
+            activeRecordId = null;
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
             saveData();
 
-            document.getElementById('recordForm').reset();
-            document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('detail1').innerHTML = '<option value="">先选择主题</option>';
-            document.getElementById('detail2').innerHTML = '<option value="">先选择活动</option>';
-            document.getElementById('detail3').value = '';
-            document.getElementById('customMainActivity').style.display = 'none';
-            document.getElementById('customDetail1').style.display = 'none';
-            document.getElementById('customDetail2').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('endBtn').style.display = 'none';
+            document.getElementById('currentTimerDisplay').style.display = 'none';
+            document.getElementById('timerDuration').style.display = 'none';
+            document.getElementById('elapsedTime').textContent = '00:00:00';
 
             updateStats();
             renderRecordsTable();
+            alert('记录已完成！请通过编辑功能补充其他信息。');
+        }
 
-            alert('记录已保存！');
-        });
+        function checkActiveRecord() {
+            const activeRecord = data.records.find(r => r.inProgress === true);
+            if (activeRecord) {
+                activeRecordId = activeRecord.id;
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('endBtn').style.display = 'inline-block';
+                document.getElementById('currentTimerDisplay').style.display = 'block';
+                document.getElementById('timerDuration').style.display = 'block';
+                document.getElementById('timerStartTime').textContent = activeRecord.startTime;
+                timerInterval = setInterval(updateElapsedTime, 1000, activeRecord.startTime);
+            }
+        }
 
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
@@ -1470,6 +1382,7 @@
         function getFilteredRecords() {
             const { start, end } = getPeriodRange();
             return data.records.filter(r => {
+                if (r.inProgress === true) return false;
                 const recordDate = new Date(r.date);
                 return recordDate >= start && recordDate <= end;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1566,16 +1479,20 @@
                 return true;
             }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
+            const inProgressRecords = filteredRecords.filter(r => r.inProgress === true);
+            const completedRecords = filteredRecords.filter(r => r.inProgress !== true);
+            const sortedRecords = [...inProgressRecords, ...completedRecords];
+
             currentPage = 1;
-            const totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
+            const totalPages = Math.ceil(sortedRecords.length / pageSize) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
 
             const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = Math.min(startIndex + pageSize, filteredRecords.length);
-            const pageRecords = filteredRecords.slice(startIndex, endIndex);
+            const endIndex = Math.min(startIndex + pageSize, sortedRecords.length);
+            const pageRecords = sortedRecords.slice(startIndex, endIndex);
 
             document.getElementById('paginationInfo').textContent =
-                `共 ${filteredRecords.length} 条记录，第 ${currentPage}/${totalPages} 页`;
+                `共 ${sortedRecords.length} 条记录，第 ${currentPage}/${totalPages} 页`;
             document.getElementById('goToPage').max = totalPages;
             document.getElementById('goToPage').value = currentPage;
 
@@ -1586,6 +1503,24 @@
             }
 
             tbody.innerHTML = pageRecords.map(r => {
+                if (r.inProgress === true) {
+                    return `
+                        <tr style="background: rgba(99, 91, 255, 0.1); border-left: 4px solid var(--btn-primary-bg);">
+                            <td>${r.date}</td>
+                            <td>${r.startTime} - 进行中</td>
+                            <td>-</td>
+                            <td><span style="color: var(--btn-primary-bg); font-weight: bold;">进行中</span></td>
+                            <td>${r.topics || '-'}</td>
+                            <td>${r.activities || '-'}</td>
+                            <td>${r.resources || '-'}</td>
+                            <td>${r.progress || '-'}</td>
+                            <td>
+                                <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
+                                <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
+                            </td>
+                        </tr>
+                    `;
+                }
                 const hours = calculateHours(r.startTime, r.endTime);
                 const focusClass = 'focus-' + r.focus;
                 return `
@@ -1938,7 +1873,10 @@
         }
 
         function renderRecordsTable() {
-            const filteredRecords = getFilteredRecords();
+            const completedRecords = getFilteredRecords();
+            const inProgressRecords = data.records.filter(r => r.inProgress === true);
+            const filteredRecords = [...inProgressRecords, ...completedRecords];
+            
             const tbody = document.getElementById('recordsBody');
 
             totalRecords = filteredRecords;
@@ -1961,6 +1899,24 @@
             }
 
             tbody.innerHTML = pageRecords.map(r => {
+                if (r.inProgress === true) {
+                    return `
+                        <tr style="background: rgba(99, 91, 255, 0.1); border-left: 4px solid var(--btn-primary-bg);">
+                            <td>${r.date}</td>
+                            <td>${r.startTime} - 进行中</td>
+                            <td>-</td>
+                            <td><span style="color: var(--btn-primary-bg); font-weight: bold;">进行中</span></td>
+                            <td>${r.topics || '-'}</td>
+                            <td>${r.activities || '-'}</td>
+                            <td>${r.resources || '-'}</td>
+                            <td>${r.progress || '-'}</td>
+                            <td>
+                                <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
+                                <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
+                            </td>
+                        </tr>
+                    `;
+                }
                 const hours = calculateHours(r.startTime, r.endTime);
                 const focusClass = 'focus-' + r.focus;
                 return `
@@ -2027,6 +1983,19 @@
 
         function deleteRecord(id) {
             if (confirm('确定要删除这条记录吗？')) {
+                const record = data.records.find(r => r.id === id);
+                if (record && record.inProgress === true) {
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
+                    activeRecordId = null;
+                    document.getElementById('startBtn').style.display = 'inline-block';
+                    document.getElementById('endBtn').style.display = 'none';
+                    document.getElementById('currentTimerDisplay').style.display = 'none';
+                    document.getElementById('timerDuration').style.display = 'none';
+                    document.getElementById('elapsedTime').textContent = '00:00:00';
+                }
                 data.records = data.records.filter(r => r.id !== id);
                 saveData();
                 updateStats();
@@ -2037,6 +2006,16 @@
             if (!confirm('确定要清除所有记录吗？\n此操作不可恢复。\n分类信息（主题、活动、对象等）将保留。')) return;
             if (!confirm('再次确认：清除所有数据记录？')) return;
             data.records = [];
+            activeRecordId = null;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('endBtn').style.display = 'none';
+            document.getElementById('currentTimerDisplay').style.display = 'none';
+            document.getElementById('timerDuration').style.display = 'none';
+            document.getElementById('elapsedTime').textContent = '00:00:00';
             saveData();
             updateStats();
             alert('所有记录已清除');
@@ -2337,10 +2316,10 @@
 
         document.addEventListener('DOMContentLoaded', async function() {
             loadTheme();
-            document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
             await loadData();
             updateModeIndicator();
             initActivityManagement();
+            checkActiveRecord();
             updateStats();
         });
 
@@ -2362,8 +2341,8 @@
             document.getElementById('editRecordId').value = record.id;
             document.getElementById('editDate').value = record.date;
             document.getElementById('editStartTime').value = record.startTime;
-            document.getElementById('editEndTime').value = record.endTime;
-            document.getElementById('editFocus').value = record.focus;
+            document.getElementById('editEndTime').value = record.endTime || '';
+            document.getElementById('editFocus').value = record.focus || 3;
 
             document.getElementById('editTopics').value = record.topics || '';
             document.getElementById('editActivities').value = record.activities || '';
@@ -2390,6 +2369,22 @@
             record.activities = document.getElementById('editActivities').value;
             record.resources = document.getElementById('editResources').value;
             record.progress = document.getElementById('editProgress').value;
+
+            if (record.inProgress === true && record.endTime) {
+                record.inProgress = false;
+                if (activeRecordId === record.id) {
+                    activeRecordId = null;
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
+                    document.getElementById('startBtn').style.display = 'inline-block';
+                    document.getElementById('endBtn').style.display = 'none';
+                    document.getElementById('currentTimerDisplay').style.display = 'none';
+                    document.getElementById('timerDuration').style.display = 'none';
+                    document.getElementById('elapsedTime').textContent = '00:00:00';
+                }
+            }
 
             saveData();
             closeEditModal();
