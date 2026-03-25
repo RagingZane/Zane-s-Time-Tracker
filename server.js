@@ -86,6 +86,6 @@ server.listen(PORT, () => {
     console.log(`   Time Tracker Server Started!`);
     console.log(`========================================`);
     console.log(`   URL: http://localhost:${PORT}`);
-    console.log(`   Press Ctrl+C to stop`);
+    console.log(`   Close this window to stop`);
     console.log(`========================================\n`);
 });
