@@ -2069,18 +2069,15 @@
         }
 
         function renderTopicSelect() {
-            const topicSelect = document.getElementById('mainActivity');
             const activityForDetail = document.getElementById('activityForDetail');
             const detailForContent = document.getElementById('detailForContent');
 
-            let optionsHtml = '<option value="">选择或输入主题</option>';
-            categories.topics.forEach(name => {
-                optionsHtml += `<option value="${name}">${name}</option>`;
-            });
-            topicSelect.innerHTML = optionsHtml + '<option value="custom">+ 自定义...</option>';
+            const categoryTopics = categories.topics || [];
+            const usedTopics = [...new Set(data.records.map(r => r.topics).filter(Boolean))];
+            const allTopics = [...new Set([...categoryTopics, ...usedTopics])].sort();
 
             activityForDetail.innerHTML = '<option value="">选择主题</option>';
-            categories.topics.forEach(name => {
+            allTopics.forEach(name => {
                 activityForDetail.innerHTML += `<option value="${name}">${name}</option>`;
             });
 
@@ -2334,6 +2331,86 @@
             }
         }
 
+        function initEditTopicOptions() {
+            const select = document.getElementById('editTopics');
+            const topics = categories.topics || [];
+            const usedTopics = [...new Set(data.records.map(r => r.topics).filter(Boolean))];
+            const allTopics = [...new Set([...topics, ...usedTopics])].sort();
+            
+            select.innerHTML = '<option value="">选择主题</option>' +
+                allTopics.map(t => `<option value="${t}">${t}</option>`).join('') +
+                '<option value="__custom__">+ 自定义...</option>';
+        }
+
+        function updateEditActivityOptions() {
+            const topicSelect = document.getElementById('editTopics');
+            const activitySelect = document.getElementById('editActivities');
+            const customInput = document.getElementById('editTopicsCustom');
+            
+            if (topicSelect.value === '__custom__') {
+                customInput.style.display = 'block';
+                activitySelect.innerHTML = '<option value="">选择活动</option><option value="__custom__">+ 自定义...</option>';
+                document.getElementById('editActivitiesCustom').style.display = 'none';
+                document.getElementById('editResources').innerHTML = '<option value="">先选择活动</option>';
+                document.getElementById('editResourcesCustom').style.display = 'none';
+                return;
+            }
+            
+            customInput.style.display = 'none';
+            const topic = topicSelect.value;
+            
+            const activities = (categories.activities && categories.activities[topic]) || [];
+            const usedActivities = [...new Set(data.records.filter(r => r.topics === topic).map(r => r.activities).filter(Boolean))];
+            const allActivities = [...new Set([...activities, ...usedActivities])].sort();
+            
+            activitySelect.innerHTML = '<option value="">选择活动</option>' +
+                allActivities.map(a => `<option value="${a}">${a}</option>`).join('') +
+                '<option value="__custom__">+ 自定义...</option>';
+            
+            document.getElementById('editActivitiesCustom').style.display = 'none';
+            document.getElementById('editResources').innerHTML = '<option value="">先选择活动</option>';
+            document.getElementById('editResourcesCustom').style.display = 'none';
+        }
+
+        function updateEditResourceOptions() {
+            const activitySelect = document.getElementById('editActivities');
+            const resourceSelect = document.getElementById('editResources');
+            const customInput = document.getElementById('editActivitiesCustom');
+            
+            if (activitySelect.value === '__custom__') {
+                customInput.style.display = 'block';
+                resourceSelect.innerHTML = '<option value="">选择对象</option><option value="__custom__">+ 自定义...</option>';
+                document.getElementById('editResourcesCustom').style.display = 'none';
+                return;
+            }
+            
+            customInput.style.display = 'none';
+            const topic = document.getElementById('editTopics').value;
+            const activity = activitySelect.value;
+            
+            const contentKey = `${topic}|${activity}`;
+            const contents = (categories.contents && categories.contents[contentKey]) || [];
+            const usedResources = [...new Set(data.records.filter(r => r.topics === topic && r.activities === activity).map(r => r.resources).filter(Boolean))];
+            const allResources = [...new Set([...contents, ...usedResources])].sort();
+            
+            resourceSelect.innerHTML = '<option value="">选择对象</option>' +
+                allResources.map(r => `<option value="${r}">${r}</option>`).join('') +
+                '<option value="__custom__">+ 自定义...</option>';
+            
+            document.getElementById('editResourcesCustom').style.display = 'none';
+        }
+
+        function handleEditResourceCustom() {
+            const resourceSelect = document.getElementById('editResources');
+            const customInput = document.getElementById('editResourcesCustom');
+            
+            if (resourceSelect.value === '__custom__') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+
         function openEditModal(recordId) {
             const record = data.records.find(r => r.id === recordId);
             if (!record) return;
@@ -2344,9 +2421,48 @@
             document.getElementById('editEndTime').value = record.endTime || '';
             document.getElementById('editFocus').value = record.focus || 3;
 
-            document.getElementById('editTopics').value = record.topics || '';
-            document.getElementById('editActivities').value = record.activities || '';
-            document.getElementById('editResources').value = record.resources || '';
+            initEditTopicOptions();
+            
+            const topicSelect = document.getElementById('editTopics');
+            const topicCustomInput = document.getElementById('editTopicsCustom');
+            
+            if (record.topics && !topicSelect.querySelector(`option[value="${record.topics}"]`)) {
+                topicSelect.value = '__custom__';
+                topicCustomInput.style.display = 'block';
+                topicCustomInput.value = record.topics;
+            } else {
+                topicSelect.value = record.topics || '';
+                topicCustomInput.style.display = 'none';
+            }
+            
+            updateEditActivityOptions();
+            
+            const activitySelect = document.getElementById('editActivities');
+            const activityCustomInput = document.getElementById('editActivitiesCustom');
+            
+            if (record.activities && !activitySelect.querySelector(`option[value="${record.activities}"]`)) {
+                activitySelect.value = '__custom__';
+                activityCustomInput.style.display = 'block';
+                activityCustomInput.value = record.activities;
+            } else {
+                activitySelect.value = record.activities || '';
+                activityCustomInput.style.display = 'none';
+            }
+            
+            updateEditResourceOptions();
+            
+            const resourceSelect = document.getElementById('editResources');
+            const resourceCustomInput = document.getElementById('editResourcesCustom');
+            
+            if (record.resources && !resourceSelect.querySelector(`option[value="${record.resources}"]`)) {
+                resourceSelect.value = '__custom__';
+                resourceCustomInput.style.display = 'block';
+                resourceCustomInput.value = record.resources;
+            } else {
+                resourceSelect.value = record.resources || '';
+                resourceCustomInput.style.display = 'none';
+            }
+            
             document.getElementById('editProgress').value = record.progress || '';
 
             document.getElementById('editModal').style.display = 'flex';
@@ -2365,9 +2481,20 @@
             record.startTime = document.getElementById('editStartTime').value;
             record.endTime = document.getElementById('editEndTime').value;
             record.focus = parseInt(document.getElementById('editFocus').value);
-            record.topics = document.getElementById('editTopics').value;
-            record.activities = document.getElementById('editActivities').value;
-            record.resources = document.getElementById('editResources').value;
+            
+            const topicSelect = document.getElementById('editTopics');
+            const activitySelect = document.getElementById('editActivities');
+            const resourceSelect = document.getElementById('editResources');
+            
+            record.topics = topicSelect.value === '__custom__' 
+                ? document.getElementById('editTopicsCustom').value 
+                : topicSelect.value;
+            record.activities = activitySelect.value === '__custom__' 
+                ? document.getElementById('editActivitiesCustom').value 
+                : activitySelect.value;
+            record.resources = resourceSelect.value === '__custom__' 
+                ? document.getElementById('editResourcesCustom').value 
+                : resourceSelect.value;
             record.progress = document.getElementById('editProgress').value;
 
             if (record.inProgress === true && record.endTime) {
@@ -2428,17 +2555,26 @@
 
             <div class="form-group">
                 <label>主题</label>
-                <input type="text" id="editTopics" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                <select id="editTopics" onchange="updateEditActivityOptions()" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary);">
+                    <option value="">选择主题</option>
+                </select>
+                <input type="text" id="editTopicsCustom" placeholder="自定义主题" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); margin-top: 8px; display: none;">
             </div>
 
             <div class="form-group">
                 <label>活动</label>
-                <input type="text" id="editActivities" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                <select id="editActivities" onchange="updateEditResourceOptions()" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary);">
+                    <option value="">先选择主题</option>
+                </select>
+                <input type="text" id="editActivitiesCustom" placeholder="自定义活动" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); margin-top: 8px; display: none;">
             </div>
 
             <div class="form-group">
                 <label>对象</label>
-                <input type="text" id="editResources" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                <select id="editResources" onchange="handleEditResourceCustom()" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary);">
+                    <option value="">先选择活动</option>
+                </select>
+                <input type="text" id="editResourcesCustom" placeholder="自定义对象" style="width: 100%; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); margin-top: 8px; display: none;">
             </div>
 
             <div class="form-group">
