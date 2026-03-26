@@ -1566,10 +1566,6 @@
                             <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
                             <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
                         </td>
-                        <td>
-                            <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
-                            <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
-                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1827,6 +1823,29 @@
                     labels: labels,
                     datasets: datasets
                 },
+                plugins: [{
+                    id: 'totalHoursLabel',
+                    afterDatasetsDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        chart.data.datasets.forEach(function(dataset, i) {
+                            if (dataset.type === 'line') return;
+                            const meta = chart.getDatasetMeta(i);
+                            if (!meta.hidden) {
+                                meta.data.forEach(function(element, index) {
+                                    const totalHours = datasets.slice(0, 5).reduce((sum, ds) => sum + (ds.data[index] || 0), 0);
+                                    if (i === 4 && totalHours > 0) {
+                                        ctx.fillStyle = '#666';
+                                        ctx.font = 'bold 11px Arial';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'bottom';
+                                        const y = element.y - 5;
+                                        ctx.fillText(totalHours.toFixed(1) + 'h', element.x, y);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1962,10 +1981,6 @@
                         <td>${r.activities || '-'}</td>
                         <td>${r.resources || '-'}</td>
                         <td>${r.progress || '-'}</td>
-                        <td>
-                            <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
-                            <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
-                        </td>
                         <td>
                             <button class="edit-btn" onclick="openEditModal('${r.id}')">编辑</button>
                             <button class="delete-btn" onclick="deleteRecord('${r.id}')">删除</button>
