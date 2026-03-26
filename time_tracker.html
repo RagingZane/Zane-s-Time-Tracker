@@ -920,36 +920,6 @@
         </div>
 
         <div class="card">
-            <h2 class="card-title">⚙️ 分类管理</h2>
-
-            <div class="management-section">
-                <h3 class="section-title">主题管理</h3>
-                <div id="mainActivityList" class="activity-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;"></div>
-                <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-                    <input type="text" id="newMainActivity" placeholder="输入新主题名称" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px;">
-                    <button class="btn btn-primary" onclick="addMainActivity()">➕ 添加</button>
-                </div>
-
-                <h3 class="section-title">活动 / 对象 管理</h3>
-                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
-                    <select id="activityForDetail" onchange="renderActivityList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px;">
-                        <option value="">选择主题</option>
-                    </select>
-                    <select id="detailForContent" onchange="renderContentList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; display: none;">
-                        <option value="">选择活动</option>
-                    </select>
-                </div>
-
-                <div id="itemList" style="margin-bottom: 16px;"></div>
-
-                <div style="display: flex; gap: 12px;">
-                    <input type="text" id="newItem" placeholder="输入新项目" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary);">
-                    <button class="btn btn-primary" onclick="addItem()">➕ 添加</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
             <h2 class="card-title">📊 统计报表</h2>
 
             <div class="tabs">
@@ -1095,6 +1065,36 @@
 
             <div style="text-align: center; margin-top: 32px; padding: 24px 0; border-top: 1px solid var(--table-border);">
                 <button class="btn btn-danger" onclick="clearAllRecords()">🗑️ 清除所有记录</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">⚙️ 分类管理</h2>
+
+            <div class="management-section">
+                <h3 class="section-title">主题管理</h3>
+                <div id="mainActivityList" class="activity-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;"></div>
+                <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                    <input type="text" id="newMainActivity" placeholder="输入新主题名称" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px;">
+                    <button class="btn btn-primary" onclick="addMainActivity()">➕ 添加</button>
+                </div>
+
+                <h3 class="section-title">活动 / 对象 管理</h3>
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <select id="activityForDetail" onchange="renderActivityList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px;">
+                        <option value="">选择主题</option>
+                    </select>
+                    <select id="detailForContent" onchange="renderContentList()" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; display: none;">
+                        <option value="">选择活动</option>
+                    </select>
+                </div>
+
+                <div id="itemList" style="margin-bottom: 16px;"></div>
+
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="newItem" placeholder="输入新项目" style="flex: 1; padding: 10px; border: 2px solid var(--input-border); border-radius: 8px; background: var(--card-bg); color: var(--text-primary);">
+                    <button class="btn btn-primary" onclick="addItem()">➕ 添加</button>
+                </div>
             </div>
         </div>
     </div>
